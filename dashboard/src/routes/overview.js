@@ -1,7 +1,12 @@
 const express = require('express');
 const db = require('../db');
+const { getQuotaStatus, CACHE_TTL_HOURS } = require('../wpscan');
 
 const router = express.Router();
+
+router.get('/quota', (req, res) => {
+  res.json({ ...getQuotaStatus(), cache_ttl_hours: CACHE_TTL_HOURS });
+});
 
 router.get('/overview', (req, res) => {
   const sites = db.prepare('SELECT id, name, url FROM sites').all();

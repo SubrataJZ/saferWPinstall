@@ -58,13 +58,40 @@ and API key from step 1.
 | `WPSCAN_API_TOKEN` | Your free/paid WPScan API token | *(required)* |
 | `WPSCAN_API_BASE` | Override the WPScan API base URL (e.g. to point at a mock/staging server) | `https://wpscan.com/api/v3` |
 | `WPORG_API_BASE` | Override the WordPress.org API base URL used for version history | `https://api.wordpress.org` |
+| `WPSCAN_DAILY_LIMIT` | Live WPScan requests allowed per day before falling back to cache | `25` (WPScan's free-tier limit) |
+| `WPSCAN_CACHE_TTL_HOURS` | How long a cached vulnerability lookup is trusted before refetching | `24` |
 | `PORT` | Dashboard HTTP port | `3000` |
+
+## Staying inside the WPScan free-tier quota (25 requests/day)
+
+Every plugin/theme lookup costs one WPScan request, and a fleet of managed sites
+can easily have far more than 25 distinct plugins/themes between them. The
+dashboard is built to spend that budget efficiently rather than run out
+partway through a scan and silently call things "safe":
+
+- **Shared, TTL-cached lookups.** A vulnerability lookup is cached by
+  `(type, slug)` — not per site, not per version — for `WPSCAN_CACHE_TTL_HOURS`
+  (default 24h). Ten sites all running Contact Form 7 cost **one** WPScan
+  request between them, not ten, and re-scanning the same site within the TTL
+  window costs nothing.
+- **Hard budget cap.** The dashboard tracks its own daily request count and
+  stops making live calls once `WPSCAN_DAILY_LIMIT` (default 25, matching
+  WPScan's free tier) is reached — it never lets a scan blow through the quota
+  and start drawing 429s.
+- **Never silently "safe."** Once the budget is spent, remaining items fall
+  back to a stale cached result if one exists (flagged in the UI), or are
+  explicitly marked "vulnerability status unknown this scan" — never reported
+  as vulnerability-free just because no live check could run.
+- **Live quota visible in the dashboard.** The header shows `used / limit`
+  WPScan requests for today, so you can see at a glance whether a fleet's
+  scan schedule is going to fit inside the budget.
+
+For a larger fleet: raise the cache TTL (vulnerability disclosures aren't
+hourly events), stagger each site's cron schedule so they don't all scan at
+once, or get a paid WPScan key with a higher limit.
 
 ## Notes & limits
 
-- The free WPScan API tier has a daily request quota; each plugin/theme lookup
-  during a scan costs one request. For larger fleets, get a paid WPScan key or
-  add caching (not included in this MVP).
 - Vulnerability coverage depends on what WPScan tracks. If a slug isn't in their
   database, it's reported as having no known vulnerabilities on record — that's
   "unknown," not a guarantee of safety.

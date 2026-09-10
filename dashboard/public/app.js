@@ -1,5 +1,6 @@
 const api = {
   overview: () => fetch('/api/overview').then((r) => r.json()),
+  quota: () => fetch('/api/quota').then((r) => r.json()),
   sites: () => fetch('/api/sites').then((r) => r.json()),
   addSite: (body) => fetch('/api/sites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.json()),
   deleteSite: (id) => fetch(`/api/sites/${id}`, { method: 'DELETE' }),
@@ -33,15 +34,22 @@ document.getElementById('add-site-form').addEventListener('submit', async (e) =>
 });
 
 async function refresh() {
-  const [overview, sites] = await Promise.all([api.overview(), api.sites()]);
-  renderSummary(overview);
+  const [overview, sites, quota] = await Promise.all([api.overview(), api.sites(), api.quota()]);
+  renderSummary(overview, quota);
   renderSites(sites, overview.sites);
 }
 
-function renderSummary(overview) {
+function renderSummary(overview, quota) {
+  const quotaLow = quota.remaining <= Math.ceil(quota.limit * 0.2);
+  const quotaOut = quota.remaining === 0;
   summaryEl.innerHTML = `
     <div class="card"><div class="value">${overview.site_count}</div><div class="label">Managed sites</div></div>
     <div class="card ${overview.total_vulnerable > 0 ? 'danger' : ''}"><div class="value">${overview.total_vulnerable}</div><div class="label">Vulnerable items</div></div>
+    <div class="card ${quotaOut ? 'danger' : quotaLow ? 'warning' : ''}">
+      <div class="value">${quota.used} / ${quota.limit}</div>
+      <div class="label">WPScan requests used today</div>
+      <div class="hint" style="margin:4px 0 0">Cached ${quota.cache_ttl_hours}h per plugin/theme &mdash; shared across all sites${quotaOut ? '. Budget exhausted; scans now use cached data only.' : ''}</div>
+    </div>
   `;
 }
 

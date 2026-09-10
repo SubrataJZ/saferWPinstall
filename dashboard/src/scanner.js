@@ -67,11 +67,23 @@ async function runScanForSite(site) {
 }
 
 async function evaluateItem(scanId, siteId, item) {
-  let vulnerabilities = [];
+  // WPScan's core endpoint is keyed by WordPress version, not a "wordpress" slug.
+  const lookupKey = item.type === 'core' ? item.version : item.slug;
+
+  let vulnerabilities;
+  let stale = false;
   try {
-    vulnerabilities = await lookupVulnerabilities(item.type, item.slug);
+    const result = await lookupVulnerabilities(item.type, lookupKey);
+    vulnerabilities = result.vulnerabilities;
+    stale = result.stale;
   } catch (err) {
-    // Don't fail the whole scan over one lookup error (e.g. rate limit); record as unknown.
+    // Don't fail the whole scan over one lookup error (quota exhausted, rate limit,
+    // network blip); record it plainly so it's visible in the findings table rather
+    // than silently reported as "safe."
+    const reason =
+      err.code === 'WPSCAN_QUOTA_EXHAUSTED' || err.code === 'WPSCAN_RATE_LIMITED'
+        ? `WPScan lookup skipped: ${err.message}`
+        : `Vulnerability lookup failed: ${err.message}`;
     insertFinding.run({
       scan_id: scanId,
       site_id: siteId,
@@ -80,14 +92,15 @@ async function evaluateItem(scanId, siteId, item) {
       name: item.name || item.slug,
       installed_version: item.version,
       is_vulnerable: 0,
-      vulnerabilities_json: JSON.stringify([{ title: `Vulnerability lookup failed: ${err.message}`, severity: 'unknown' }]),
+      vulnerabilities_json: JSON.stringify([{ title: reason, severity: 'unknown' }]),
       recommended_version: null,
-      recommendation_reason: 'Vulnerability data unavailable this scan.',
+      recommendation_reason: 'Vulnerability status unknown this scan — not the same as confirmed safe.',
     });
     return;
   }
 
   const applicable = findApplicableVulnerabilities(item.version, vulnerabilities);
+  const staleNote = stale ? ' (using cached data — today\'s WPScan request budget is used up)' : '';
 
   let recommended = { recommended_version: null, reason: 'No update source available for this item.' };
   if (item.type !== 'core') {
@@ -112,7 +125,7 @@ async function evaluateItem(scanId, siteId, item) {
     is_vulnerable: applicable.length ? 1 : 0,
     vulnerabilities_json: JSON.stringify(applicable),
     recommended_version: recommended.recommended_version,
-    recommendation_reason: recommended.reason,
+    recommendation_reason: recommended.reason + staleNote,
   });
 }
 
