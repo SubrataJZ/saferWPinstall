@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SaferWP Install Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>SaferWP Install</h1>
+    <p class="subtitle">Managed WordPress sites &middot; plugin &amp; theme vulnerability scanning</p>
+  </header>
+
+  <main>
+    <section id="summary" class="cards"></section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Sites</h2>
+        <button id="add-site-btn">+ Add site</button>
+      </div>
+      <table id="sites-table">
+        <thead>
+          <tr>
+            <th>Site</th>
+            <th>Last scan</th>
+            <th>Findings</th>
+            <th>Schedule</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="panel" id="findings-panel" hidden>
+      <div class="panel-header">
+        <h2 id="findings-title">Findings</h2>
+        <button id="close-findings">Close</button>
+      </div>
+      <table id="findings-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Installed</th>
+            <th>Status</th>
+            <th>Vulnerabilities</th>
+            <th>Recommended safe version</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <dialog id="add-site-dialog">
+    <form id="add-site-form" method="dialog">
+      <h2>Add a site</h2>
+      <p class="hint">Install the SaferWP Agent plugin on the target site, then copy its URL and API key from
+        <em>Settings &rarr; SaferWP Agent</em>.</p>
+      <label>Name<input name="name" required placeholder="Client's Blog" /></label>
+      <label>Site URL<input name="url" required placeholder="https://example.com" type="url" /></label>
+      <label>API key<input name="api_key" required /></label>
+      <label>Scan schedule (cron)<input name="schedule_cron" value="0 */6 * * *" /></label>
+      <div class="dialog-actions">
+        <button type="button" id="cancel-add-site">Cancel</button>
+        <button type="submit">Add site</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
