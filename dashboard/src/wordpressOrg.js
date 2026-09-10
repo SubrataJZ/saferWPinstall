@@ -5,11 +5,13 @@ const fetch = require('node-fetch');
  * official WordPress.org API. Used to know what versions actually exist so
  * recommendations point at a real, downloadable release.
  */
+const WPORG_API_BASE = process.env.WPORG_API_BASE || 'https://api.wordpress.org';
+
 async function getVersionHistory(type, slug) {
   const url =
     type === 'theme'
-      ? `https://api.wordpress.org/themes/info/1.2/?action=theme_information&slug=${encodeURIComponent(slug)}&request[fields][versions]=1`
-      : `https://api.wordpress.org/plugins/info/1.0/${encodeURIComponent(slug)}.json`;
+      ? `${WPORG_API_BASE}/themes/info/1.2/?action=theme_information&slug=${encodeURIComponent(slug)}&request[fields][versions]=1`
+      : `${WPORG_API_BASE}/plugins/info/1.0/${encodeURIComponent(slug)}.json`;
 
   const res = await fetch(url);
   if (!res.ok) return { versions: [], latest: null };

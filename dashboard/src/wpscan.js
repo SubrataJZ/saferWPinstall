@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 
-const WPSCAN_API_BASE = 'https://wpscan.com/api/v3';
+const WPSCAN_API_BASE = process.env.WPSCAN_API_BASE || 'https://wpscan.com/api/v3';
 const WPSCAN_TOKEN = process.env.WPSCAN_API_TOKEN || '';
 
 /**

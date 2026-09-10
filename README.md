@@ -51,6 +51,15 @@ and API key from step 1.
   respond to scans on that site; **Resume** re-enables both.
 - Each site has its own cron schedule (default: every 6 hours) editable when adding it.
 
+### Optional environment variables
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `WPSCAN_API_TOKEN` | Your free/paid WPScan API token | *(required)* |
+| `WPSCAN_API_BASE` | Override the WPScan API base URL (e.g. to point at a mock/staging server) | `https://wpscan.com/api/v3` |
+| `WPORG_API_BASE` | Override the WordPress.org API base URL used for version history | `https://api.wordpress.org` |
+| `PORT` | Dashboard HTTP port | `3000` |
+
 ## Notes & limits
 
 - The free WPScan API tier has a daily request quota; each plugin/theme lookup
